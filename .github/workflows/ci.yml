@@ -1,0 +1,88 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+    services:
+      mongo:
+        image: mongo:6
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.adminCommand(\"ping\").ok'" --health-interval=10s --health-timeout=5s --health-retries=5
+    strategy:
+      matrix:
+        node-version: [18.x]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install server deps & run tests
+        working-directory: server
+        env:
+          MONGO_URI: mongodb://localhost:27017/wondertravel
+        run: |
+          npm ci
+          npm test
+
+      - name: Install client deps, lint and build
+        working-directory: client
+        run: |
+          npm ci
+          npm run lint || echo "eslint warnings (non-blocking)"
+          npm run build
+
+      - name: Start server and wait for /health
+        working-directory: server
+        env:
+          MONGO_URI: mongodb://localhost:27017/wondertravel
+          PORT: 5000
+        run: |
+          npm ci
+          nohup npm start > server.log 2>&1 &
+          for i in {1..20}; do
+            status=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:5000/health || echo "000")
+            if [ "$status" -eq 200 ]; then
+              echo "Server ready"; break
+            fi
+            echo "Waiting for server... ($i)"
+            sleep 3
+          done
+          echo "---- /health response ----"
+          curl -s http://localhost:5000/health || true
+          if [ "$status" -ne 200 ]; then
+            echo "Server did not become ready within timeout. Dumping server.log:"
+            sed -n '1,200p' server.log || true
+            exit 1
+          fi
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: client-build
+          path: client/dist
+
+      - name: "Smoke test: POST /api/itinerary/generate"
+        working-directory: server
+        run: |
+          echo "Running smoke test against /api/itinerary/generate"
+          resp=$(curl -s -o /tmp/smoke.json -w "%{http_code}" -X POST http://localhost:5000/api/itinerary/generate -H "Content-Type: application/json" -d '{"destination":"Manali","days":1,"budget":"Rs 10000","style":"relaxed","travelers":"1 Person"}' || echo "000")
+          echo "HTTP status: $resp"
+          if [ "$resp" -ne 200 ]; then
+            echo "Smoke test failed (non-200). Body:"; cat /tmp/smoke.json || true
+            exit 1
+          fi
+          grep -q '"days_data"' /tmp/smoke.json || (echo "Missing days_data in response"; cat /tmp/smoke.json; exit 1)
+          echo "Smoke test passed"

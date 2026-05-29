@@ -1,0 +1,457 @@
+.page {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top left, rgba(200, 224, 248, 0.75), transparent 32%),
+    radial-gradient(circle at bottom right, rgba(200, 240, 220, 0.7), transparent 28%),
+    linear-gradient(180deg, #f7fbff 0%, #f4f8f2 100%);
+}
+
+.main {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 56px 24px 72px;
+}
+
+.heroCard,
+.panel {
+  border: 1.5px solid #dbe6ef;
+  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 20px 60px rgba(25, 50, 80, 0.08);
+  backdrop-filter: blur(10px);
+}
+
+.heroCard {
+  padding: 40px 32px;
+  margin-bottom: 24px;
+}
+
+.heroTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 28px;
+}
+
+.heroActions,
+.inlineActions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.badge {
+  display: inline-block;
+  margin-bottom: 18px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: #e7f1fb;
+  color: #1f6fb2;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.title {
+  margin: 0 0 14px;
+  color: #18324a;
+  font-family: 'Lora', serif;
+  font-size: clamp(32px, 5vw, 52px);
+  line-height: 1.1;
+}
+
+.subtitle,
+.panelText {
+  color: #567086;
+  font-size: 16px;
+  line-height: 1.75;
+}
+
+.subtitle {
+  max-width: 720px;
+  margin: 0;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.statCard {
+  border: 1.5px solid #e2ebf2;
+  border-radius: var(--radius-md);
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbfd 100%);
+  padding: 22px 20px;
+}
+
+.statLabel {
+  display: block;
+  margin-bottom: 10px;
+  color: #6f8798;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.statValue {
+  color: #18324a;
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.contentGrid {
+  display: grid;
+  grid-template-columns: 1.05fr 1.2fr;
+  gap: 24px;
+}
+
+.panel {
+  padding: 28px 24px;
+}
+
+.panelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.panelTitle {
+  margin: 0;
+  color: #18324a;
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.panelHint,
+.rolePill,
+.statusPill {
+  padding: 7px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: capitalize;
+}
+
+.rolePill {
+  background: #eaf4ee;
+  color: #2e7d5e;
+}
+
+.panelHint {
+  background: #eef4fa;
+  color: #5f7890;
+}
+
+.profileGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.photoPanel {
+  display: grid;
+  grid-template-columns: 76px 1fr;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 18px;
+  padding: 16px;
+  border: 1.5px solid #e2ebf2;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, #ffffff 0%, #f2fbf8 100%);
+}
+
+.photoPreview {
+  width: 76px;
+  height: 76px;
+  display: grid;
+  place-items: center;
+  border-radius: 24px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #0f766e, #2563eb 62%, #f59e0b);
+  box-shadow: 0 14px 28px rgba(15, 118, 110, 0.2);
+}
+
+.photoPreview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.photoPreview span {
+  color: white;
+  font-size: 22px;
+  font-weight: 900;
+}
+
+.photoContent {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.photoContent strong {
+  color: #18324a;
+  font-size: 16px;
+}
+
+.photoContent span,
+.photoMessage {
+  color: #60798e;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.photoActions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+.photoUpload,
+.photoRemove {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 8px 13px;
+  font-size: 12.5px;
+  font-weight: 850;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.photoUpload {
+  color: white;
+  background: #0f766e;
+}
+
+.photoUpload:hover {
+  background: #115e59;
+}
+
+.photoUpload input {
+  display: none;
+}
+
+.photoRemove {
+  color: #b91c1c;
+  background: #fff1f2;
+  border: none;
+}
+
+.photoRemove:hover {
+  color: white;
+  background: #dc2626;
+}
+
+.photoMessage {
+  margin: 4px 0 0;
+}
+
+.infoItem {
+  border: 1.5px solid #e2ebf2;
+  border-radius: var(--radius-md);
+  background: #fbfdff;
+  padding: 16px 15px;
+}
+
+.infoLabel {
+  display: block;
+  margin-bottom: 8px;
+  color: #7a92a4;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.infoValue {
+  color: #18324a;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.bookingList,
+.actionList {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.bookingCard,
+.actionCard {
+  border: 1.5px solid #e2ebf2;
+  border-radius: var(--radius-md);
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbfd 100%);
+}
+
+.bookingCard {
+  padding: 18px 18px 16px;
+}
+
+.bookingTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.bookingTitle {
+  margin: 0 0 6px;
+  color: #18324a;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.bookingRoute {
+  margin: 0;
+  color: #60798e;
+  font-size: 14px;
+}
+
+.bookingMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  color: #6b8395;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.statusConfirmed {
+  background: #e9f6ee;
+  color: #2f7b5d;
+}
+
+.statusPending {
+  background: #fff4df;
+  color: #b87820;
+}
+
+.statusCancelled {
+  background: #fce8e8;
+  color: #c43a3a;
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.actionCard {
+  width: 100%;
+  padding: 18px 18px 16px;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  font: inherit;
+  border-color: #e2ebf2;
+}
+
+.actionCard strong {
+  display: block;
+  margin-bottom: 8px;
+  color: #18324a;
+  font-size: 16px;
+}
+
+.actionCard span {
+  color: #60798e;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.actionCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px rgba(25, 50, 80, 0.08);
+  border-color: #c9d9e6;
+}
+
+.primaryBtn,
+.secondaryBtn {
+  border-radius: 14px;
+  padding: 12px 16px;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.primaryBtn {
+  border: none;
+  background: #1f7acb;
+  color: #fff;
+}
+
+.secondaryBtn {
+  border: 1.5px solid #d5e1ea;
+  background: #fff;
+  color: #18324a;
+}
+
+.primaryBtn:hover,
+.secondaryBtn:hover {
+  transform: translateY(-1px);
+}
+
+@media (max-width: 980px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .contentGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .main {
+    padding: 36px 16px 56px;
+  }
+
+  .heroCard,
+  .panel {
+    padding: 24px 18px;
+  }
+
+  .heroTop,
+  .panelHeader,
+  .bookingTop {
+    flex-direction: column;
+  }
+
+  .grid,
+  .profileGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .photoPanel {
+    grid-template-columns: 1fr;
+    justify-items: flex-start;
+  }
+
+  .heroActions,
+  .inlineActions {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .primaryBtn,
+  .secondaryBtn {
+    width: 100%;
+  }
+}
