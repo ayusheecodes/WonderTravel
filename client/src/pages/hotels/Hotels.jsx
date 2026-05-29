@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import useCartStore from '../../store/useCartStore'
-import styles from './Hotels.module.css'
+import styles from './hotels.module.css'
 
 const ALL_HOTELS = [
   { id:1,  name:'The Manali Inn',         type:'Hotel',    stars:4, emoji:'🏨', bg:'#d8eaf8', rating:4.6, reviews:284, price:2800, origPrice:3500, amenities:['wifi','parking','breakfast','mountain','heater'], tags:['Free Cancellation','Couple Friendly'], desc:'Panoramic Himalayan views, walking distance to Mall Road.', rooms:[{name:'Deluxe Mountain View',price:2800},{name:'Suite with Balcony',price:4200}], badge:'Top Rated' },
