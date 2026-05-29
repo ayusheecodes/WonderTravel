@@ -69,7 +69,7 @@ export default function Dashboard() {
         if (profileResponse.status === 'rejected' && bookingsResponse.status === 'rejected') {
           setError('Could not load dashboard data right now.')
         }
-      } catch (fetchError) {
+      } catch {
         setError('Could not load dashboard data right now.')
       } finally {
         setLoading(false)

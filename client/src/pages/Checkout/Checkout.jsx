@@ -38,7 +38,7 @@ export default function Checkout() {
 
       // Save each cart item as a separate booking in MongoDB
       for (const item of cartItems) {
-        const bookingPayload = buildBookingPayload(item, cartTotal);
+        const bookingPayload = buildBookingPayload(item);
 
         await API.post('/bookings', bookingPayload);
       }
@@ -56,7 +56,7 @@ export default function Checkout() {
   };
 
   // Maps cart item to booking schema
-  const buildBookingPayload = (item, total) => {
+  const buildBookingPayload = (item) => {
     // Parse valid date or fallback to now
     let safeDate = new Date();
     if (item.details?.date && item.details.date !== 'Select Date') {

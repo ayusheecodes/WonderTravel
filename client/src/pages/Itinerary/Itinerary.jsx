@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import API from '../../api/axios'
 import MapViewer from '../../components/MapViewer/MapViewer'
@@ -59,12 +59,7 @@ export default function Itinerary() {
 
   const hasPrefill = Boolean(searchParams.get('destination'))
 
-  useEffect(() => {
-    if (!hasPrefill || itinerary || generating) return
-    handleGenerate(true)
-  }, [])
-
-  const handleGenerate = async (silent = false) => {
+  const handleGenerate = useCallback(async (silent = false) => {
     const errs = {}
     if (!destination.trim()) errs.destination = 'Please enter a destination'
     if (!days || Number(days) < 1 || Number(days) > 14) errs.days = 'Enter days between 1 and 14'
@@ -103,7 +98,12 @@ export default function Itinerary() {
     } finally {
       setGenerating(false)
     }
-  }
+  }, [budget, days, destination, setSearchParams, travelStyle, travelers])
+
+  useEffect(() => {
+    if (!hasPrefill || itinerary || generating) return
+    handleGenerate(true)
+  }, [generating, handleGenerate, hasPrefill, itinerary])
 
   const handleReset = () => {
     setItinerary(null)

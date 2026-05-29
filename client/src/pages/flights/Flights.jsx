@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import useCartStore from '../../store/useCartStore'
 import styles from './Flights.module.css'
@@ -32,7 +32,6 @@ export default function Flights() {
   const toParam      = searchParams.get('to')    || ''
   const dateParam    = searchParams.get('date')  || ''
   const paxParam     = searchParams.get('pax')   || '1 Adult, Economy'
-  const tripParam    = searchParams.get('tripType') || 'one-way'
 
   // Modify search state
   const [from,     setFrom]     = useState(fromParam)

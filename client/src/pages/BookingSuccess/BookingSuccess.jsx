@@ -1,7 +1,16 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import html2pdf from 'html2pdf.js';
 import styles from './BookingSuccess.module.css';
+
+const buildBookingId = (items, total) => {
+  const source = `${items.map((item) => `${item.type}-${item.title}-${item.price}`).join('|')}-${total}`;
+  let hash = 0;
+  for (let index = 0; index < source.length; index += 1) {
+    hash = ((hash << 5) - hash + source.charCodeAt(index)) >>> 0;
+  }
+  return `WT-${hash.toString(36).toUpperCase().padStart(8, '0').slice(0, 8)}`;
+};
 
 export default function BookingSuccess() {
   const navigate = useNavigate();
@@ -9,8 +18,13 @@ export default function BookingSuccess() {
   const ticketRef = useRef(null);
 
   // Read data passed from Checkout.jsx
-  const cartItems = location.state?.cartItems || [];
+  const cartItems = useMemo(() => location.state?.cartItems || [], [location.state?.cartItems]);
   const cartTotal = location.state?.cartTotal || 0;
+  const bookingId = useMemo(() => buildBookingId(cartItems, cartTotal), [cartItems, cartTotal]);
+  const qrCells = useMemo(
+    () => Array.from({ length: 25 }, (_, index) => ((index * 7 + bookingId.charCodeAt(index % bookingId.length)) % 3) !== 0),
+    [bookingId]
+  );
 
   useEffect(() => {
     // If user somehow gets here without items, boot them
@@ -32,8 +46,6 @@ export default function BookingSuccess() {
     };
     html2pdf().set(opt).from(element).save();
   };
-
-  const bookingId = `WT-${Math.random().toString(36).substr(2, 8).toUpperCase()}`;
 
   return (
     <div className={styles.page}>
@@ -98,8 +110,8 @@ export default function BookingSuccess() {
             <div className={styles.ticketFooter}>
               <div className={styles.qrCode}>
                 <div className={styles.qrGrid}>
-                  {Array.from({length: 25}).map((_, i) => (
-                    <div key={i} className={Math.random() > 0.5 ? styles.qrDark : styles.qrLight} />
+                  {qrCells.map((isDark, i) => (
+                    <div key={i} className={isDark ? styles.qrDark : styles.qrLight} />
                   ))}
                 </div>
               </div>

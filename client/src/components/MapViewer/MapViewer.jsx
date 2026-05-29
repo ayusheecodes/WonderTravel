@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import Map, { Marker } from 'react-map-gl/maplibre'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import styles from './MapViewer.module.css'
@@ -18,21 +18,20 @@ export default function MapViewer({ activities, destinationName }) {
     [activities]
   )
 
-  const [viewState, setViewState] = useState({
-    longitude: 77.1892,
-    latitude: 32.2396,
-    zoom: 11,
-  })
+  const initialViewState = useMemo(() => {
+    if (!mappableActivities.length) {
+      return {
+        longitude: 77.1892,
+        latitude: 32.2396,
+        zoom: 11,
+      }
+    }
 
-  useEffect(() => {
-    if (!mappableActivities.length) return
-
-    setViewState({
+    return {
       longitude: Number(mappableActivities[0].coordinates[0]),
       latitude: Number(mappableActivities[0].coordinates[1]),
       zoom: 11,
-      transitionDuration: 1000,
-    })
+    }
   }, [mappableActivities])
 
   if (!activities || activities.length === 0) return null
@@ -51,8 +50,8 @@ export default function MapViewer({ activities, destinationName }) {
   return (
     <div className={styles.mapContainer}>
       <Map
-        {...viewState}
-        onMove={(evt) => setViewState(evt.viewState)}
+        key={`${initialViewState.longitude}-${initialViewState.latitude}`}
+        initialViewState={initialViewState}
         mapStyle={MAP_STYLE}
         style={{ width: '100%', height: '100%', borderRadius: '16px' }}
       >

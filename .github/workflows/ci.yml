@@ -41,7 +41,7 @@ jobs:
         working-directory: client
         run: |
           npm ci
-          npm run lint || echo "eslint warnings (non-blocking)"
+          npm run lint
           npm run build
 
       - name: Start server and wait for /health

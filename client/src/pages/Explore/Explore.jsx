@@ -412,7 +412,7 @@ export default function Explore() {
         const { data } = await API.get('/destinations')
         setDestinations(mergeDestinations(Array.isArray(data) ? data : []))
         setApiError('')
-      } catch (error) {
+      } catch {
         setDestinations(LOCAL_DESTINATIONS)
         setApiError('')
       } finally {
