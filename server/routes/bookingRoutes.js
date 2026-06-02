@@ -6,6 +6,6 @@ const { protect } = require('../middleware/authMiddleware')
 router.get ('/',    protect, getMyBookings)
 router.post('/',    protect, createBooking)
 router.get ('/:id', protect, getBookingById)
-router.put ('/:id', protect, cancelBooking)
+router.delete('/:id', protect, cancelBooking)
 
 module.exports = router

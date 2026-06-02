@@ -66,7 +66,7 @@ const register = async (req, res) => {
       email,
       phone,
       password,
-      role: role || 'traveler',
+      role:      role      || 'traveler',
       region:    region    || '',
       expertise: expertise || '',
     })
@@ -146,10 +146,13 @@ const updateProfile = async (req, res) => {
     const user = await User.findById(req.user._id)
     if (!user) return res.status(404).json({ message: 'User not found' })
 
-    user.name      = req.body.name      || user.name
-    user.phone     = req.body.phone     || user.phone
-    user.region    = req.body.region    || user.region
-    user.expertise = req.body.expertise || user.expertise
+    // Bug #10 fix: use 'key in req.body' for optional fields so callers can
+    // intentionally clear them by passing "". Required fields (name, phone) still
+    // only update when a truthy value is provided, protecting schema constraints.
+    if (req.body.name)           user.name      = req.body.name
+    if (req.body.phone)          user.phone     = req.body.phone
+    if ('region'    in req.body) user.region    = req.body.region    ?? user.region
+    if ('expertise' in req.body) user.expertise = req.body.expertise ?? user.expertise
 
     if (req.body.password) {
       user.password = req.body.password

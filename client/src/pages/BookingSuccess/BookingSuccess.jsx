@@ -39,7 +39,8 @@ export default function BookingSuccess() {
     const element = ticketRef.current;
     const opt = {
       margin:       10,
-      filename:     `WonderTravel_Booking_${Math.floor(Math.random()*10000)}.pdf`,
+      // Bug #6 fix: use the stable, deterministic bookingId instead of Math.random()
+      filename:     `WonderTravel_Booking_${bookingId}.pdf`,
       image:        { type: 'jpeg', quality: 0.98 },
       html2canvas:  { scale: 2, useCORS: true },
       jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
@@ -84,21 +85,67 @@ export default function BookingSuccess() {
             <div className={styles.ticketBody}>
               <h2>E-Ticket Confirmation</h2>
               <div className={styles.ticketItems}>
-                {cartItems.map((item, idx) => (
-                  <div key={idx} className={styles.tItem}>
-                    <h3>{item.type === 'flight' ? 'Flight Ticket' : 'Itinerary Package'}</h3>
-                    <div className={styles.tRow}>
-                      <strong>{item.title}</strong>
-                      <span>{item.subtitle}</span>
-                    </div>
-                    {item.type === 'flight' && (
-                      <div className={styles.tDetails}>
-                        <span>{item.details?.dep} → {item.details?.arr}</span>
-                        <span>Date: {item.details?.date || 'Open'}</span>
+                {cartItems.map((item, idx) => {
+                  // Bug #17 fix: render type-specific heading and details for every
+                  // booking type, not just flights. Previously all non-flight items
+                  // showed 'Itinerary Package' with no details at all.
+                  const typeLabel = {
+                    flight:    'Flight Ticket',
+                    hotel:     'Hotel Booking',
+                    train:     'Train Ticket',
+                    cab:       'Cab Booking',
+                    itinerary: 'Itinerary Package',
+                  }[item.type] || 'Booking'
+
+                  return (
+                    <div key={idx} className={styles.tItem}>
+                      <h3>{typeLabel}</h3>
+                      <div className={styles.tRow}>
+                        <strong>{item.title}</strong>
+                        <span>{item.subtitle}</span>
                       </div>
-                    )}
-                  </div>
-                ))}
+
+                      {item.type === 'flight' && item.details && (
+                        <div className={styles.tDetails}>
+                          <span>{item.details.dep} → {item.details.arr}</span>
+                          <span>Date: {item.details.date || 'Open'}</span>
+                          <span>Class: {item.details.class || 'Economy'}</span>
+                          <span>Passengers: {item.details.passengers || 1}</span>
+                        </div>
+                      )}
+
+                      {item.type === 'hotel' && item.details && (
+                        <div className={styles.tDetails}>
+                          <span>Check-in: {item.details.checkIn || '–'}</span>
+                          <span>Check-out: {item.details.checkOut || '–'}</span>
+                          {item.details.roomType && <span>Room: {item.details.roomType}</span>}
+                        </div>
+                      )}
+
+                      {item.type === 'train' && item.details && (
+                        <div className={styles.tDetails}>
+                          <span>{item.details.from || '–'} → {item.details.to || '–'}</span>
+                          <span>Date: {item.details.date || 'Open'}</span>
+                          {item.details.class && <span>Class: {item.details.class}</span>}
+                        </div>
+                      )}
+
+                      {item.type === 'cab' && item.details && (
+                        <div className={styles.tDetails}>
+                          <span>Pickup: {item.details.pickup || '–'}</span>
+                          <span>Drop: {item.details.drop || '–'}</span>
+                          {item.details.date && <span>Date: {item.details.date}</span>}
+                        </div>
+                      )}
+
+                      {item.type === 'itinerary' && (
+                        <div className={styles.tDetails}>
+                          <span>{item.subtitle}</span>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
               </div>
 
               <div className={styles.ticketTotal}>

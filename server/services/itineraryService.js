@@ -364,6 +364,8 @@ const normalizeGeneratedItinerary = (raw, request) => {
     localTips: asArray(raw?.localTips || raw?.tips).length ? asArray(raw?.localTips || raw?.tips) : destination.quickTips,
     budgetBreakdown,
     days_data: daysData,
+    // Bug #5 fix: explicit source flag so the client knows which generator was used
+    source: 'ai',
   }
 }
 
@@ -460,11 +462,15 @@ const generateWithGemini = async ({ destination, days, budget, style, travelers 
 };
 
 const createItinerary = async ({ destination: destinationQuery, days, budget, style = 'adventure', travelers }) => {
+  let fallbackReason = null
+
   try {
     const generated = await generateWithGemini({ destination: destinationQuery, days, budget, style, travelers });
     return normalizeGeneratedItinerary(generated, { destination: destinationQuery, days, budget, style, travelers });
   } catch (error) {
-    console.warn('Gemini AI failed or not configured, falling back to local generator:', error.message);
+    // Bug #5 fix: capture the reason so the fallback is not completely silent
+    fallbackReason = error.message
+    console.warn('Gemini AI failed or not configured, falling back to local generator:', fallbackReason);
   }
 
   const totalDays = Math.min(Math.max(Number(days) || 3, 1), 14)
@@ -554,6 +560,9 @@ const createItinerary = async ({ destination: destinationQuery, days, budget, st
       misc: Math.round(totalBudget * 0.08),
     },
     days_data: daysData,
+    // Bug #5 fix: tell the client this came from the local fallback, not Gemini AI
+    source: 'local',
+    ...(fallbackReason ? { fallbackReason } : {}),
   }
 }
 

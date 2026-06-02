@@ -435,7 +435,10 @@ export default function Explore() {
         if (region !== 'All Regions' && destination.region !== region) return false
         if (tag !== 'All' && destination.tag !== tag) return false
         if (diff !== 'All Levels' && destination.difficulty !== diff) return false
-        if (season !== 'Any Season' && !destination.bestSeason.includes(season.split('-')[0])) return false
+        // Bug #12 fix: match the full season string (e.g. 'Oct-Mar') instead of just
+        // the start month ('Oct'). The old split('-')[0] approach matched 'Oct-Nov'
+        // and 'Oct-Mar' equally for a 'Oct-Mar' filter, making it over-inclusive.
+        if (season !== 'Any Season' && !destination.bestSeason.includes(season)) return false
         return true
       })
       .sort((a, b) => {

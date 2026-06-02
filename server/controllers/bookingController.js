@@ -14,9 +14,30 @@ const getMyBookings = async (req, res) => {
 // POST /api/bookings — create new booking
 const createBooking = async (req, res) => {
   try {
+    // Bug #4 fix: whitelist allowed fields instead of spreading req.body
+    // to prevent mass-assignment (e.g. spoofing user, status, etc.)
+    const {
+      bookingType,
+      totalAmount,
+      travelDate,
+      passengers,
+      flightDetails,
+      trainDetails,
+      hotelDetails,
+      cabDetails,
+    } = req.body
+
     const booking = await Booking.create({
       user: req.user._id,
-      ...req.body,
+      bookingType,
+      totalAmount,
+      travelDate,
+      passengers,
+      flightDetails,
+      trainDetails,
+      hotelDetails,
+      cabDetails,
+      // status is intentionally excluded — always defaults to 'confirmed' via schema
     })
     res.status(201).json(booking)
   } catch (error) {
@@ -31,8 +52,12 @@ const cancelBooking = async (req, res) => {
     if (!booking) {
       return res.status(404).json({ message: 'Booking not found' })
     }
+    // Bug #2 fix: 403 Forbidden (authenticated but not the owner), not 401 Unauthenticated
     if (booking.user.toString() !== req.user._id.toString()) {
-      return res.status(401).json({ message: 'Not authorized to cancel this booking' })
+      return res.status(403).json({ message: 'Not authorized to cancel this booking' })
+    }
+    if (booking.status === 'cancelled') {
+      return res.status(400).json({ message: 'Booking is already cancelled' })
     }
     booking.status = 'cancelled'
     await booking.save()
@@ -47,8 +72,9 @@ const getBookingById = async (req, res) => {
   try {
     const booking = await Booking.findById(req.params.id)
     if (!booking) return res.status(404).json({ message: 'Booking not found' })
+    // Bug #2 fix: 403 Forbidden (authenticated but not the owner), not 401 Unauthenticated
     if (booking.user.toString() !== req.user._id.toString()) {
-      return res.status(401).json({ message: 'Not authorized' })
+      return res.status(403).json({ message: 'Not authorized' })
     }
     res.json(booking)
   } catch (error) {

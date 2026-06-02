@@ -9,6 +9,10 @@ const protect = async (req, res, next) => {
       token = req.headers.authorization.split(' ')[1]
       const decoded = jwt.verify(token, process.env.JWT_SECRET)
       req.user = await User.findById(decoded.id).select('-password')
+      // Bug #3 fix: user may have been deleted after the JWT was issued
+      if (!req.user) {
+        return res.status(401).json({ message: 'Not authorized — account no longer exists' })
+      }
       next()
     } catch (error) {
       return res.status(401).json({ message: 'Not authorized — token invalid' })

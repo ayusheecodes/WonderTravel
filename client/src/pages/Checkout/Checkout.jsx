@@ -31,20 +31,34 @@ export default function Checkout() {
       const userStr = localStorage.getItem('wondertravel_user');
       const userObj = userStr ? JSON.parse(userStr) : null;
       const token = userObj?.token;
-      
+
       if (!token) {
         throw new Error('Please log in to complete your booking.');
       }
 
-      // Save each cart item as a separate booking in MongoDB
-      for (const item of cartItems) {
-        const bookingPayload = buildBookingPayload(item);
+      // Bug #8 fix: use Promise.allSettled so a single item failure doesn't
+      // silently leave the user in a half-booked state. We report exactly how
+      // many items failed and keep the cart intact so they can retry.
+      const results = await Promise.allSettled(
+        cartItems.map((item) => API.post('/bookings', buildBookingPayload(item)))
+      );
 
-        await API.post('/bookings', bookingPayload);
+      const failures = results.filter((result) => result.status === 'rejected');
+
+      if (failures.length > 0) {
+        const firstError = failures[0].reason?.response?.data?.message
+          || failures[0].reason?.message
+          || 'Unknown error';
+        setError(
+          failures.length === cartItems.length
+            ? `Booking failed: ${firstError}`
+            : `${failures.length} of ${cartItems.length} bookings failed. Please try again. (${firstError})`
+        );
+        setProcessing(false);
+        return;
       }
 
-      // ✅ All bookings saved — go to success page
-      // Clear the cart here so StrictMode in BookingSuccess doesn't break it
+      // All bookings saved — clear cart and navigate to success page
       clearCart();
       navigate('/success', { state: { cartItems, cartTotal } });
 

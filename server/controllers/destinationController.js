@@ -18,9 +18,12 @@ const getDestinations = async (req, res) => {
       ]
     }
 
-    const destinationCount = await Destination.countDocuments()
+    // Bug #19 fix: count ALL documents (not just matching ones) so we can decide
+    // whether the DB is populated. If DB is empty, use the catalog exclusively.
+    const totalCount = await Destination.countDocuments()
 
-    if (destinationCount === 0) {
+    if (totalCount === 0) {
+      // DB is empty — filter and return the catalog only
       const results = filterCatalog(fallbackDestinations, { region, tag, search, verified })
         .sort((a, b) => b.rating - a.rating)
         .map(formatDestination)
@@ -28,12 +31,17 @@ const getDestinations = async (req, res) => {
       return res.json(results)
     }
 
+    // DB has data — apply the same filters to both sources and merge.
+    // Both the Mongoose query and filterCatalog now receive identical filter
+    // parameters so results are consistent regardless of which source they come from.
     const destinations = await Destination.find(query)
       .populate('addedBy', 'name')
       .sort({ rating: -1 })
 
     const formattedDestinations = destinations.map(formatDestination)
     const existingNames = new Set(formattedDestinations.map((destination) => destination.name.toLowerCase()))
+
+    // filterCatalog applies region/tag/search/verified — same as the DB query
     const fallbackResults = filterCatalog(fallbackDestinations, { region, tag, search, verified })
       .filter((destination) => !existingNames.has(destination.name.toLowerCase()))
       .map(formatDestination)
@@ -74,7 +82,40 @@ const createDestination = async (req, res) => {
 // PUT /api/destinations/:id — admin verify
 const updateDestination = async (req, res) => {
   try {
-    const dest = await Destination.findByIdAndUpdate(req.params.id, req.body, { new: true }).populate('addedBy', 'name')
+    // Bug #13 fix: whitelist the fields an admin is allowed to update.
+    // Prevents mass-assignment of sensitive fields like addedBy, contributorName, etc.
+    const {
+      name, state, region, tag, emoji, image,
+      rating, difficulty, bestSeason, duration,
+      description, tips, activities, budgetMin, budgetMax,
+      isVerified,
+    } = req.body
+
+    const allowedUpdates = {
+      ...(name        !== undefined && { name }),
+      ...(state       !== undefined && { state }),
+      ...(region      !== undefined && { region }),
+      ...(tag         !== undefined && { tag }),
+      ...(emoji       !== undefined && { emoji }),
+      ...(image       !== undefined && { image }),
+      ...(rating      !== undefined && { rating }),
+      ...(difficulty  !== undefined && { difficulty }),
+      ...(bestSeason  !== undefined && { bestSeason }),
+      ...(duration    !== undefined && { duration }),
+      ...(description !== undefined && { description }),
+      ...(tips        !== undefined && { tips }),
+      ...(activities  !== undefined && { activities }),
+      ...(budgetMin   !== undefined && { budgetMin }),
+      ...(budgetMax   !== undefined && { budgetMax }),
+      ...(isVerified  !== undefined && { isVerified }),
+    }
+
+    const dest = await Destination.findByIdAndUpdate(
+      req.params.id,
+      allowedUpdates,
+      { new: true, runValidators: true }
+    ).populate('addedBy', 'name')
+
     if (!dest) return res.status(404).json({ message: 'Destination not found' })
     res.json(formatDestination(dest))
   } catch (error) {

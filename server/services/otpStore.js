@@ -1,6 +1,12 @@
 const crypto = require('crypto')
 
 const OTP_EXPIRY_MS = 5 * 60 * 1000
+
+// Bug #11 note: This store is in-process memory only.
+// OTP sessions are lost on server restart and will not work correctly
+// across multiple processes or containers (e.g. clustered Node or Docker replicas).
+// For production at scale, replace this Map with a Redis-backed store using
+// the same createOtpSession / verifyOtpSession interface.
 const otpSessions = new Map()
 
 const generateOtp = () => crypto.randomInt(100000, 1000000).toString()
@@ -46,6 +52,19 @@ const verifyOtpSession = ({ sessionId, phone, otp }) => {
   otpSessions.delete(sessionId)
   return { valid: true }
 }
+
+// Bug #11 fix: Periodic cleanup sweeps expired sessions every 10 minutes so the
+// Map does not grow indefinitely in long-running processes.
+const CLEANUP_INTERVAL_MS = 10 * 60 * 1000
+const cleanupExpiredSessions = () => {
+  const now = Date.now()
+  for (const [sessionId, record] of otpSessions) {
+    if (record.expiresAt < now) {
+      otpSessions.delete(sessionId)
+    }
+  }
+}
+setInterval(cleanupExpiredSessions, CLEANUP_INTERVAL_MS).unref()
 
 module.exports = {
   OTP_EXPIRY_MS,

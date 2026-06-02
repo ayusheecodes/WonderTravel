@@ -77,7 +77,11 @@ export default function Dashboard() {
     }
 
     loadDashboard()
-  }, [user])
+  // Bug #7 fix: depend on user._id (a stable primitive) instead of the entire user
+  // object. Depending on the object caused re-fetches on every updateUser() call
+  // (e.g. profile photo upload) because AuthContext creates a new object reference.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?._id])
 
   const stats = useMemo(() => {
     const today = new Date()

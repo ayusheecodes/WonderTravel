@@ -302,6 +302,17 @@ export default function Itinerary() {
                 <span>Days {itinerary.days}</span>
                 <span>{buildTravelerLabel(itinerary.travelers)}</span>
                 <span>{TRAVEL_STYLES.find((item) => item.id === itinerary.style)?.label}</span>
+                {/* Bug #5 fix: surface a badge when the local generator was used instead of Gemini AI */}
+                {itinerary.source === 'local' && (
+                  <span style={{ background: '#fff4e8', color: '#b87820', borderRadius: '999px', padding: '2px 10px', fontSize: '11px', fontWeight: 700, letterSpacing: '0.03em' }}>
+                    Smart Suggestions
+                  </span>
+                )}
+                {itinerary.source === 'ai' && (
+                  <span style={{ background: '#e8f4ee', color: '#2e7d5e', borderRadius: '999px', padding: '2px 10px', fontSize: '11px', fontWeight: 700, letterSpacing: '0.03em' }}>
+                    AI Powered
+                  </span>
+                )}
               </div>
             </div>
           </div>

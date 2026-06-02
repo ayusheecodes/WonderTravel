@@ -173,6 +173,10 @@ export default function Signup() {
     } catch (err) {
       const msg = err.response?.data?.message || 'Registration failed. Try again.'
       showToast(msg)
+      // Bug #18 fix: clear the OTP inputs after a failed attempt so the user
+      // doesn't have to manually erase the wrong digits before re-entering.
+      setOtp(['', '', '', '', '', ''])
+      document.getElementById('sotp-0')?.focus()
       setVerifying(false)
     }
   }

@@ -5,24 +5,24 @@ import { useAuth } from '../../context/AuthContext'
 import styles from './Login.module.css'
 
 export default function Login() {
-  const [method,   setMethod]   = useState('email')
-  const [email,    setEmail]    = useState('')
-  const [password, setPassword] = useState('')
-  const [showPw,   setShowPw]   = useState(false)
-  const [phone,    setPhone]    = useState('')
-  const [otpSent,  setOtpSent]  = useState(false)
-  const [otp,      setOtp]      = useState(['','','','','',''])
-  const [timer,    setTimer]    = useState(0)
-  const [loading,  setLoading]  = useState(false)
-  const [errors,   setErrors]   = useState({})
-  const [toast,    setToast]    = useState('')
+  const [method,     setMethod]     = useState('email')
+  const [email,      setEmail]      = useState('')
+  const [password,   setPassword]   = useState('')
+  const [showPw,     setShowPw]     = useState(false)
+  const [phone,      setPhone]      = useState('')
+  const [otpSent,    setOtpSent]    = useState(false)
+  const [otp,        setOtp]        = useState(['','','','','',''])
+  const [timer,      setTimer]      = useState(0)
+  const [loading,    setLoading]    = useState(false)
+  const [errors,     setErrors]     = useState({})
+  const [toast,      setToast]      = useState('')
   const [otpSessionId, setOtpSessionId] = useState('')
-  const [devOtp,   setDevOtp]   = useState('')
+  const [devOtp,     setDevOtp]     = useState('')
   const [sendingOtp, setSendingOtp] = useState(false)
-  const [verifying, setVerifying] = useState(false)
+  const [verifying,  setVerifying]  = useState(false)
 
-  const { login }  = useAuth()
-  const navigate   = useNavigate()
+  const { login } = useAuth()
+  const navigate  = useNavigate()
 
   const showToast = msg => {
     setToast(msg)
@@ -40,30 +40,30 @@ export default function Login() {
   }
 
   const handleLogin = async (e) => {
-  e.preventDefault()
-  const errs = {}
-  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    errs.email = 'Enter a valid email address'
-  }
-  if (!password || password.length < 6) {
-    errs.password = 'Password must be at least 6 characters'
-  }
-  if (Object.keys(errs).length) { setErrors(errs); return }
+    e.preventDefault()
+    const errs = {}
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      errs.email = 'Enter a valid email address'
+    }
+    // Bug #9 fix: min length must match the server schema (minlength: 8) and Signup validation
+    if (!password || password.length < 8) {
+      errs.password = 'Password must be at least 8 characters'
+    }
+    if (Object.keys(errs).length) { setErrors(errs); return }
 
-  setLoading(true)
-  try {
-    const { data } = await API.post('/auth/login', { email, password })
-    login(data)
-    showToast('Welcome back! Redirecting…')
-    setTimeout(() => navigate('/'), 1200)
-  } catch (err) {
-    const msg = err.response?.data?.message || 'Login failed. Try again.'
-    setErrors({ password: msg })
-  } finally {
-    setLoading(false)
+    setLoading(true)
+    try {
+      const { data } = await API.post('/auth/login', { email, password })
+      login(data)
+      showToast('Welcome back! Redirecting…')
+      setTimeout(() => navigate('/'), 1200)
+    } catch (err) {
+      const msg = err.response?.data?.message || 'Login failed. Try again.'
+      setErrors({ password: msg })
+    } finally {
+      setLoading(false)
+    }
   }
-
-}
 
   const handleSendOtp = async () => {
     if (!phone || phone.length !== 10) { setErrors({ phone: 'Enter valid 10-digit number' }); return }
