@@ -33,7 +33,15 @@ export default function BookingSuccess() {
     }
   }, [cartItems, navigate]);
 
-  if (cartItems.length === 0) return null;
+  // BUG-03 fix: don't render null synchronously — that caused a flash of blank
+  // content before the useEffect redirect fires. Show a neutral loading state instead.
+  if (cartItems.length === 0) {
+    return (
+      <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        Redirecting…
+      </div>
+    )
+  }
 
   const handleDownloadPDF = () => {
     const element = ticketRef.current;

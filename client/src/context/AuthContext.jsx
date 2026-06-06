@@ -5,8 +5,18 @@ const AuthContext = createContext()
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
-    const saved = localStorage.getItem('wondertravel_user')
-    return saved ? JSON.parse(saved) : null
+    // BUG-19 fix: JSON.parse throws synchronously inside the useState initializer
+    // if localStorage contains a corrupted or truncated value (e.g. after a
+    // storage-quota error mid-write). This would crash the entire React tree with
+    // no recovery path. Wrapping in try/catch silently discards bad data and
+    // starts the user in a logged-out state instead.
+    try {
+      const saved = localStorage.getItem('wondertravel_user')
+      return saved ? JSON.parse(saved) : null
+    } catch {
+      localStorage.removeItem('wondertravel_user')
+      return null
+    }
   })
   const [loading] = useState(false)
 

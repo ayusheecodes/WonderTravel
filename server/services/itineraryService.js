@@ -453,11 +453,20 @@ const generateWithGemini = async ({ destination, days, budget, style, travelers 
   `;
 
   const result = await model.generateContent(prompt);
-  const text = result.response.text();
-  const parsed = JSON.parse(text);
-  
-  if (!parsed.days_data || parsed.days_data.length === 0) throw new Error('Invalid JSON structure');
-  
+  const rawText = result.response.text();
+
+  // BUG-07 fix: Gemini sometimes wraps its JSON in markdown code fences
+  // (```json ... ```) which causes JSON.parse to throw a SyntaxError.
+  // Strip any leading/trailing code fences before parsing.
+  const stripped = rawText
+    .replace(/^```(?:json)?\s*/i, '')
+    .replace(/```\s*$/i, '')
+    .trim();
+
+  const parsed = JSON.parse(stripped);
+
+  if (!parsed.days_data || parsed.days_data.length === 0) throw new Error('Invalid JSON structure from Gemini');
+
   return parsed;
 };
 
@@ -478,27 +487,38 @@ const createItinerary = async ({ destination: destinationQuery, days, budget, st
   const totalBudget = parseBudget(budget) || (totalDays * travelerCount * 3500)
   const destination = findDestination(destinationQuery)
   const budgetTier = inferBudgetTier(totalBudget, totalDays, travelerCount)
-  const usedTitles = new Set()
+  // usedTitles removed — replaced by per-day dayUsed sets (see BUG-14 fix below)
+
+  // BUG-14 fix: build a sorted pool once and reset the "used" set each day.
+  // Previously `usedTitles` was shared across all days, so destinations with
+  // small pools (e.g. Ziro Valley has 5 activities but a user can request 14 days)
+  // produced days 3+ with 0-2 activities and no fallback.
+  // Now each day resets its local used-set and allows reuse when the pool is
+  // exhausted, ensuring every day always gets exactly 3 activities.
+  const sortedPool = [...destination.activityPool]
+    .sort((a, b) => scoreActivity(b, style) - scoreActivity(a, style))
 
   const daysData = Array.from({ length: totalDays }, (_, index) => {
-    const sorted = [...destination.activityPool]
-      .sort((a, b) => scoreActivity(b, style) - scoreActivity(a, style))
+    const dayUsed = new Set()
 
-    const chosen = []
-    for (const dayPart of ['morning', 'afternoon', 'evening']) {
-      const match = sorted.find((activity) => activity.dayPart === dayPart && !usedTitles.has(activity.title))
-      if (match) {
-        chosen.push(match)
-        usedTitles.add(match.title)
-      }
+    const pickActivity = (preferDayPart) => {
+      // First pass: prefer the requested dayPart and avoid already-chosen titles this day
+      let match = sortedPool.find(
+        (a) => (!preferDayPart || a.dayPart === preferDayPart) && !dayUsed.has(a.title)
+      )
+      // Second pass (pool exhausted for this day): allow any not yet picked today
+      if (!match) match = sortedPool.find((a) => !dayUsed.has(a.title))
+      // Final fallback: pool smaller than 3 distinct titles — just pick top-scored
+      if (!match) match = sortedPool[0]
+      dayUsed.add(match.title)
+      return match
     }
 
-    while (chosen.length < 3) {
-      const fallback = sorted.find((activity) => !usedTitles.has(activity.title))
-      if (!fallback) break
-      chosen.push(fallback)
-      usedTitles.add(fallback.title)
-    }
+    const chosen = [
+      pickActivity('morning'),
+      pickActivity('afternoon'),
+      pickActivity('evening'),
+    ]
 
     const activities = chosen.map((activity) => {
       const lngOffset = (Math.random() - 0.5) * 0.05

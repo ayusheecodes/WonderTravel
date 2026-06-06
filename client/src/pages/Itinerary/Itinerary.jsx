@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import API from '../../api/axios'
 import MapViewer from '../../components/MapViewer/MapViewer'
@@ -53,6 +53,9 @@ export default function Itinerary() {
   const [errors, setErrors] = useState({})
   const [itinerary, setItinerary] = useState(null)
   const [generating, setGenerating] = useState(false)
+  // BUG-02 fix: track whether the one-shot prefill generation has already fired
+  // so the effect never re-triggers when handleGenerate is recreated by form edits.
+  const prefillFiredRef = useRef(false)
   const [activeDay, setActiveDay] = useState(1)
   const [showBudget, setShowBudget] = useState(false)
   const [apiError, setApiError] = useState('')
@@ -101,9 +104,15 @@ export default function Itinerary() {
   }, [budget, days, destination, setSearchParams, travelStyle, travelers])
 
   useEffect(() => {
-    if (!hasPrefill || itinerary || generating) return
+    // BUG-02 fix: only auto-generate once on mount when prefill params are present.
+    // Previously this depended on `handleGenerate` (a useCallback that recreates
+    // whenever any form field changes), which caused an infinite re-generation loop
+    // every time the user edited a field after the page loaded.
+    if (!hasPrefill || prefillFiredRef.current) return
+    prefillFiredRef.current = true
     handleGenerate(true)
-  }, [generating, handleGenerate, hasPrefill, itinerary])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasPrefill])
 
   const handleReset = () => {
     setItinerary(null)

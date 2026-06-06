@@ -33,6 +33,7 @@ export default function Cabs() {
 
   const [pickup,    setPickup]    = useState(pickupParam)
   const [drop,      setDrop]      = useState(dropParam)
+  const [date,      setDate]      = useState(dateParam)
   const [showModify,setShowModify]= useState(false)
 
   const [sortKey,    setSortKey]    = useState('price')
@@ -53,7 +54,7 @@ export default function Cabs() {
   const resetFilters = () => { setDT(['local','platform']); setCT(['SUV','Sedan','Mini','Tempo']); setMaxPrice(6000) }
 
   const handleModifySearch = () => {
-    navigate(`/cabs?pickup=${encodeURIComponent(pickup)}&drop=${encodeURIComponent(drop)}&date=${encodeURIComponent(dateParam)}`)
+    navigate(`/cabs?pickup=${encodeURIComponent(pickup)}&drop=${encodeURIComponent(drop)}&date=${encodeURIComponent(date)}`)
     setShowModify(false)
   }
 
@@ -104,7 +105,10 @@ export default function Cabs() {
               <div className={styles.modifyFields}>
                 <div className={styles.mfBox}><label>Pickup</label><input value={pickup} onChange={e=>setPickup(e.target.value)} placeholder="Address or landmark"/></div>
                 <div className={styles.mfBox}><label>Drop</label><input value={drop} onChange={e=>setDrop(e.target.value)} placeholder="Destination"/></div>
-                <div className={styles.mfBox}><label>Date & Time</label><input type="datetime-local" defaultValue={dateParam}/></div>
+                <div className={styles.mfBox}><label>Date & Time</label>
+                  {/* BUG-06 fix: controlled input so the new value is captured in state */}
+                  <input type="datetime-local" value={date} onChange={e=>setDate(e.target.value)}/>
+                </div>
                 <button className={styles.modifySearchBtn} onClick={handleModifySearch}>Search</button>
               </div>
             </div>

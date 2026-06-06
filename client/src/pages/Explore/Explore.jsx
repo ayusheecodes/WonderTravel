@@ -413,7 +413,9 @@ export default function Explore() {
         setDestinations(mergeDestinations(Array.isArray(data) ? data : []))
         setApiError('')
       } catch {
-        setDestinations(LOCAL_DESTINATIONS)
+        // BUG-12 fix: use mergeDestinations([]) instead of LOCAL_DESTINATIONS
+        // directly so the fallback path is consistent with the success path.
+        setDestinations(mergeDestinations([]))
         setApiError('')
       } finally {
         setLoading(false)
@@ -430,7 +432,10 @@ export default function Explore() {
           search &&
           !destination.name.toLowerCase().includes(search.toLowerCase()) &&
           !destination.state.toLowerCase().includes(search.toLowerCase()) &&
-          !destination.desc.toLowerCase().includes(search.toLowerCase())
+          // BUG-18 fix: API destinations are normalised through formatDestination which
+          // maps `description` → `desc`. But as a safety net, fall back to
+          // `description` so a mismatch never throws a TypeError and crashes the filter.
+          !(destination.desc || destination.description || '').toLowerCase().includes(search.toLowerCase())
         ) return false
         if (region !== 'All Regions' && destination.region !== region) return false
         if (tag !== 'All' && destination.tag !== tag) return false

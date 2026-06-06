@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useCartStore from '../../store/useCartStore';
 import API from '../../api/axios';
@@ -18,6 +18,14 @@ export default function Checkout() {
     name: '', email: '', cardNumber: '', expiry: '', cvc: ''
   });
 
+  // BUG-04 fix: track mount state so async state setters are safe if the
+  // component unmounts while awaiting Promise.allSettled (e.g. user navigates away).
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
+
   const handleInputChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -36,12 +44,14 @@ export default function Checkout() {
         throw new Error('Please log in to complete your booking.');
       }
 
-      // Bug #8 fix: use Promise.allSettled so a single item failure doesn't
+      // Use Promise.allSettled so a single item failure doesn't
       // silently leave the user in a half-booked state. We report exactly how
       // many items failed and keep the cart intact so they can retry.
       const results = await Promise.allSettled(
         cartItems.map((item) => API.post('/bookings', buildBookingPayload(item)))
       );
+
+      if (!mountedRef.current) return;
 
       const failures = results.filter((result) => result.status === 'rejected');
 
@@ -64,6 +74,7 @@ export default function Checkout() {
 
     } catch (err) {
       console.error('Booking error:', err);
+      if (!mountedRef.current) return;
       setError(err.response?.data?.message || err.message || 'Payment failed. Please try again.');
       setProcessing(false);
     }

@@ -33,7 +33,9 @@
 .form { display: flex; flex-direction: column; gap: 16px; }
 .formGroup { display: flex; flex-direction: column; gap: 6px; }
 .formGroup label { font-size: 11px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); display: flex; align-items: center; justify-content: space-between; }
-.forgotLink { font-size: 11.5px; font-weight: 700; color: var(--accent); text-transform: none; letter-spacing: 0; text-decoration: none; }
+/* BUG-15 fix: added button-reset props (background, border, padding, cursor) so
+   the class renders identically on a <button> as it did on the old <a> tag. */
+.forgotLink { font-size: 11.5px; font-weight: 700; color: var(--accent); text-transform: none; letter-spacing: 0; text-decoration: none; background: none; border: none; padding: 0; cursor: pointer; font-family: var(--font-body); }
 .inputWrap { display: flex; align-items: center; background: var(--bg-soft); border: 1.5px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; transition: var(--transition); }
 .inputWrap:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); background: white; }
 .hasError .inputWrap    { border-color: var(--red); box-shadow: 0 0 0 3px #fce8e8; }

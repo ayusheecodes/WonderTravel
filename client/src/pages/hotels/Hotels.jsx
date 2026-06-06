@@ -32,25 +32,32 @@ export default function Hotels() {
   const checkOutParam = searchParams.get('checkOut') || ''
   const guestsParam   = searchParams.get('guests')   || '2 Guests, 1 Room'
 
-  const [dest,      setDest]      = useState(destParam)
-  const [checkIn,   setCheckIn]   = useState(checkInParam)
-  const [checkOut,  setCheckOut]  = useState(checkOutParam)
-  const [showModify,setShowModify]= useState(false)
+  const [dest,       setDest]       = useState(destParam)
+  const [checkIn,    setCheckIn]    = useState(checkInParam)
+  const [checkOut,   setCheckOut]   = useState(checkOutParam)
+  const [showModify, setShowModify] = useState(false)
 
-  const [sortKey,  setSortKey]  = useState('recommended')
-  const [maxPrice, setMaxPrice] = useState(12000)
-  const [types,    setTypes]    = useState(['Hotel','Resort','Homestay','Cottage'])
-  const [selected, setSelected] = useState(null)
-  const [selRoom,  setSelRoom]  = useState(0)
+  const [sortKey,       setSortKey]       = useState('recommended')
+  const [maxPrice,      setMaxPrice]      = useState(12000)
+  const [types,         setTypes]         = useState(['Hotel','Resort','Homestay','Cottage'])
+  // BUG-05 fix: amenity filter state — empty means "any"; otherwise every
+  // selected amenity must be present on the hotel for it to pass the filter.
+  const [amenityFilter, setAmenityFilter] = useState([])
+  const [selected,      setSelected]      = useState(null)
+  const [selRoom,       setSelRoom]       = useState(0)
 
   const filtered = ALL_HOTELS
     .filter(h => types.includes(h.type))
     .filter(h => h.price <= maxPrice)
+    // BUG-05 fix: only show hotels that have every selected amenity
+    .filter(h => amenityFilter.every(a => h.amenities.includes(a)))
     .sort((a,b) => sortKey==='price' ? a.price-b.price : b.rating-a.rating)
 
-  const toggleType   = t => setTypes(p => p.includes(t)?p.filter(x=>x!==t):[...p,t])
-  const resetFilters = () => { setTypes(['Hotel','Resort','Homestay','Cottage']); setMaxPrice(12000) }
-  const renderStars  = n => '⭐'.repeat(n)
+  const toggleType    = t => setTypes(p => p.includes(t) ? p.filter(x=>x!==t) : [...p,t])
+  // BUG-05 fix: toggle handler for amenity filter
+  const toggleAmenity = a => setAmenityFilter(p => p.includes(a) ? p.filter(x=>x!==a) : [...p,a])
+  const resetFilters  = () => { setTypes(['Hotel','Resort','Homestay','Cottage']); setMaxPrice(12000); setAmenityFilter([]) }
+  const renderStars   = n => '⭐'.repeat(n)
 
   const getNights = () => {
     if (checkInParam && checkOutParam) {
@@ -66,7 +73,7 @@ export default function Hotels() {
     setShowModify(false)
   }
 
-  const displayDest = destParam || 'Manali'
+  const displayDest  = destParam || 'Manali'
   const displayDates = checkInParam && checkOutParam
     ? `${new Date(checkInParam).toLocaleDateString('en-IN',{day:'numeric',month:'short'})} – ${new Date(checkOutParam).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}`
     : 'Select Dates'
@@ -84,7 +91,7 @@ export default function Hotels() {
       price: total,
       details: {
         roomType: room.name,
-        checkIn: checkInParam || new Date().toISOString(),
+        checkIn:  checkInParam  || new Date().toISOString(),
         checkOut: checkOutParam || new Date(Date.now() + nights * 86400000).toISOString(),
         nights,
         guests: guestsParam,
@@ -144,7 +151,11 @@ export default function Hotels() {
           <div className={styles.filterSection}>
             <div className={styles.filterTitle}>Amenities</div>
             {[['wifi','📶 Free WiFi'],['breakfast','🍳 Breakfast Included'],['mountain','🏔️ Mountain View'],['parking','🅿️ Free Parking'],['heater','🔥 Room Heater']].map(([v,l])=>(
-              <label key={v} className={styles.checkLabel}><input type="checkbox"/><span className={styles.checkBox}/>{l}</label>
+              <label key={v} className={styles.checkLabel}>
+                {/* BUG-05 fix: controlled checkbox wired to amenityFilter state */}
+                <input type="checkbox" checked={amenityFilter.includes(v)} onChange={()=>toggleAmenity(v)}/>
+                <span className={styles.checkBox}/>{l}
+              </label>
             ))}
           </div>
         </aside>

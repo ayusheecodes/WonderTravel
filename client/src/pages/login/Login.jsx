@@ -177,7 +177,16 @@ export default function Login() {
               <div className={`${styles.formGroup} ${errors.password ? styles.hasError : ''}`}>
                 <label>
                   Password
-                  <a href="#" className={styles.forgotLink}>Forgot password?</a>
+                  {/* BUG-15 fix: was href="#" — a dead link that just scrolled to the top.
+                      Replaced with a button that gives the user a clear action path.
+                      Wire up a real reset flow here when it's built. */}
+                  <button
+                    type="button"
+                    className={styles.forgotLink}
+                    onClick={() => showToast('Use "Login with OTP" to access your account without a password.')}
+                  >
+                    Forgot password?
+                  </button>
                 </label>
                 <div className={styles.inputWrap}>
                   <span className={styles.inputIcon}>🔒</span>

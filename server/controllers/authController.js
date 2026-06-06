@@ -159,13 +159,18 @@ const updateProfile = async (req, res) => {
     }
 
     const updated = await user.save()
+    // BUG-08 fix: include region and expertise in the response so AuthContext
+    // stays fully in sync after a profile update — previously these were saved
+    // to the DB but never returned, leaving the client with stale values.
     res.json({
-      _id:   updated._id,
-      name:  updated.name,
-      email: updated.email,
-      phone: updated.phone,
-      role:  updated.role,
-      token: generateToken(updated._id),
+      _id:       updated._id,
+      name:      updated.name,
+      email:     updated.email,
+      phone:     updated.phone,
+      role:      updated.role,
+      region:    updated.region,
+      expertise: updated.expertise,
+      token:     generateToken(updated._id),
     })
   } catch (error) {
     res.status(500).json({ message: 'Server error' })

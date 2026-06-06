@@ -96,7 +96,10 @@ export default function Flights() {
         dep: selectedFlight.dep,
         arr: selectedFlight.arr,
         date: displayDate,
-        passengers: Number.parseInt(paxParam, 10) || 1,
+        // BUG-10 fix: parseInt("1 Adult, Economy", 10) works by accident but is
+        // fragile — any future format change (e.g. "Adult x1") would silently
+        // return NaN. Use an explicit regex to extract the leading digit instead.
+        passengers: Number((paxParam.match(/\d+/) || [])[0]) || 1,
         class: selectedFare === 'business' ? 'Business' : 'Economy',
       }
     });

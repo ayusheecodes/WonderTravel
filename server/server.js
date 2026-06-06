@@ -60,6 +60,10 @@ app.use((req, res) => {
 
 app.use((err, req, res, next) => {
   console.error(err.stack)
+  // BUG-13 fix: if headers were already sent (e.g. a partial streaming response),
+  // calling res.json() again would crash with ERR_HTTP_HEADERS_SENT.
+  // Delegate to Express's default error handler in that case.
+  if (res.headersSent) return next(err)
   res.status(500).json({ message: 'Something went wrong on the server' })
 })
 

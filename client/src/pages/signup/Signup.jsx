@@ -173,10 +173,13 @@ export default function Signup() {
     } catch (err) {
       const msg = err.response?.data?.message || 'Registration failed. Try again.'
       showToast(msg)
-      // Bug #18 fix: clear the OTP inputs after a failed attempt so the user
+      // Clear the OTP inputs after a failed attempt so the user
       // doesn't have to manually erase the wrong digits before re-entering.
       setOtp(['', '', '', '', '', ''])
       document.getElementById('sotp-0')?.focus()
+    } finally {
+      // BUG-01 fix: always reset verifying, including on success,
+      // so the button is never permanently disabled.
       setVerifying(false)
     }
   }
@@ -244,7 +247,7 @@ export default function Signup() {
                     <span className={styles.roleIcon}>{r.icon}</span>
                     <h3>{r.title}</h3>
                     <ul className={styles.rolePerks}>
-                      {r.perks.map((p) => <li key={p}>OK {p}</li>)}
+                      {r.perks.map((p) => <li key={p}>✓ {p}</li>)}
                     </ul>
                     {role === r.id && <div className={styles.roleCheck}>Selected</div>}
                   </div>
@@ -414,7 +417,21 @@ export default function Signup() {
               </button>
 
               <div className={styles.stepBtns} style={{ marginTop: 12 }}>
-                <button className={styles.btnBack} onClick={() => setStep(2)} disabled={verifying}>Change number</button>
+              <button
+                  className={styles.btnBack}
+                  disabled={verifying}
+                  onClick={() => {
+                    // BUG-16 fix: clear the stale OTP session so the user can't
+                    // accidentally submit the old session ID after changing their
+                    // phone number. The next requestOtp call will populate fresh values.
+                    setOtpSessionId('')
+                    setDevOtp('')
+                    setOtp(['', '', '', '', '', ''])
+                    setStep(2)
+                  }}
+                >
+                  Change number
+                </button>
               </div>
             </div>
           )}
