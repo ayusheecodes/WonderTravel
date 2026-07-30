@@ -1,10 +1,21 @@
 const Booking = require('../models/Booking')
+const { isMongoAvailable } = require('../config/db')
+const fallbackStore = require('../services/fallbackStore')
+
+const getBookingModel = () => {
+  if (isMongoAvailable()) return Booking
+  return {
+    find: async (query) => fallbackStore.listBookingsByUser(query.user),
+    create: async (payload) => fallbackStore.createBooking(payload),
+    findById: async (id) => fallbackStore.getBookingById(id),
+  }
+}
 
 // GET /api/bookings — get all bookings for logged-in user
 const getMyBookings = async (req, res) => {
   try {
-    const bookings = await Booking.find({ user: req.user._id })
-      .sort({ createdAt: -1 })
+    const bookings = (await getBookingModel().find({ user: req.user._id }))
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
     res.json(bookings)
   } catch (error) {
     res.status(500).json({ message: error.message })
@@ -27,7 +38,7 @@ const createBooking = async (req, res) => {
       cabDetails,
     } = req.body
 
-    const booking = await Booking.create({
+    const booking = await getBookingModel().create({
       user: req.user._id,
       bookingType,
       totalAmount,
@@ -59,6 +70,11 @@ const cancelBooking = async (req, res) => {
     if (booking.status === 'cancelled') {
       return res.status(400).json({ message: 'Booking is already cancelled' })
     }
+    if (!booking.save) {
+      const updated = await fallbackStore.cancelBookingById(req.params.id)
+      return res.json({ message: 'Booking cancelled successfully', booking: updated })
+    }
+
     booking.status = 'cancelled'
     await booking.save()
     res.json({ message: 'Booking cancelled successfully', booking })

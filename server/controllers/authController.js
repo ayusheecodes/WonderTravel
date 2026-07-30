@@ -2,6 +2,32 @@ const User = require('../models/User')
 const jwt  = require('jsonwebtoken')
 const { createOtpSession, verifyOtpSession } = require('../services/otpStore')
 const { sendOtpSms } = require('../services/smsService')
+const { isMongoAvailable } = require('../config/db')
+const fallbackStore = require('../services/fallbackStore')
+
+const getUserModel = () => {
+  if (isMongoAvailable()) return User
+  return {
+    findOne: async (query) => {
+      if (!query) return null
+      if (query.$or) {
+        const email = query.$or.find((condition) => condition.email)?.email
+        const phone = query.$or.find((condition) => condition.phone)?.phone
+        return fallbackStore.findUserByEmailOrPhone({ email, phone })
+      }
+      const email = query.email
+      const phone = query.phone
+      if (email && phone) {
+        return fallbackStore.findUserByEmailOrPhone({ email, phone })
+      }
+      if (email) return fallbackStore.findUserByEmail(email)
+      if (phone) return fallbackStore.findUserByPhone(phone)
+      return null
+    },
+    findById: async (id) => fallbackStore.findUserById(id),
+    create: async (payload) => fallbackStore.createUser(payload),
+  }
+}
 
 // Generate JWT
 const generateToken = (id) => {
@@ -19,7 +45,7 @@ const sendSignupOtp = async (req, res) => {
       return res.status(400).json({ message: 'Please fill in all required fields before requesting OTP' })
     }
 
-    const userExists = await User.findOne({ $or: [{ email }, { phone }] })
+    const userExists = await getUserModel().findOne({ $or: [{ email }, { phone }] })
     if (userExists) {
       return res.status(400).json({ message: 'An account already exists with this email or phone number' })
     }
@@ -55,13 +81,13 @@ const register = async (req, res) => {
     }
 
     // Check if user exists
-    const userExists = await User.findOne({ $or: [{ email }, { phone }] })
+    const userExists = await getUserModel().findOne({ $or: [{ email }, { phone }] })
     if (userExists) {
       return res.status(400).json({ message: 'An account already exists with this email or phone number' })
     }
 
     // Create user
-    const user = await User.create({
+    const user = await getUserModel().create({
       name,
       email,
       phone,
@@ -95,7 +121,10 @@ const login = async (req, res) => {
     }
 
     // Find user and include password
-    const user = await User.findOne({ email }).select('+password')
+    const user = await getUserModel().findOne({ email })
+    if (user && user.password) {
+      user.password = user.password
+    }
     if (!user) {
       return res.status(401).json({ message: 'No account found with this email' })
     }
@@ -123,7 +152,7 @@ const login = async (req, res) => {
 // @route  GET /api/auth/profile
 const getProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id)
+    const user = await getUserModel().findById(req.user._id)
     if (!user) return res.status(404).json({ message: 'User not found' })
     res.json({
       _id:       user._id,
@@ -143,7 +172,7 @@ const getProfile = async (req, res) => {
 // @route  PUT /api/auth/profile
 const updateProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id)
+    const user = await getUserModel().findById(req.user._id)
     if (!user) return res.status(404).json({ message: 'User not found' })
 
     // Bug #10 fix: use 'key in req.body' for optional fields so callers can
@@ -158,7 +187,13 @@ const updateProfile = async (req, res) => {
       user.password = req.body.password
     }
 
-    const updated = await user.save()
+    const updated = await (typeof user.save === 'function' ? user.save() : fallbackStore.updateUser(req.user._id, {
+      name: user.name,
+      phone: user.phone,
+      region: user.region,
+      expertise: user.expertise,
+      password: user.password,
+    }))
     // BUG-08 fix: include region and expertise in the response so AuthContext
     // stays fully in sync after a profile update — previously these were saved
     // to the DB but never returned, leaving the client with stale values.
@@ -186,7 +221,7 @@ const sendLoginOtp = async (req, res) => {
       return res.status(400).json({ message: 'Please provide a phone number' })
     }
 
-    const user = await User.findOne({ phone })
+    const user = await getUserModel().findOne({ phone })
     if (!user) {
       return res.status(404).json({ message: 'No account found with this phone number' })
     }
@@ -220,7 +255,7 @@ const verifyLoginOtp = async (req, res) => {
       return res.status(400).json({ message: otpCheck.message })
     }
 
-    const user = await User.findOne({ phone })
+    const user = await getUserModel().findOne({ phone })
     if (!user) {
       return res.status(404).json({ message: 'No account found with this phone number' })
     }

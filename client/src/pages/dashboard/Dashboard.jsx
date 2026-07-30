@@ -160,30 +160,32 @@ export default function Dashboard() {
           </div>
 
           <div className={styles.grid}>
-            <div className={styles.statCard}>
-              <span className={styles.statLabel}>Upcoming Trips</span>
-              <strong className={styles.statValue}>{stats.upcomingTrips}</strong>
-            </div>
-            <div className={styles.statCard}>
-              <span className={styles.statLabel}>Active Bookings</span>
-              <strong className={styles.statValue}>{stats.totalBookings}</strong>
-            </div>
-            <div className={styles.statCard}>
-              <span className={styles.statLabel}>Total Spend</span>
-              <strong className={styles.statValue}>{formatCurrency(stats.totalSpent)}</strong>
-            </div>
-            <div className={styles.statCard}>
-              <span className={styles.statLabel}>Pending</span>
-              <strong className={styles.statValue}>{stats.pending}</strong>
-            </div>
+            {[{label:'Upcoming Trips', value:stats.upcomingTrips, icon:'🗺️', color:'teal'},
+              {label:'Active Bookings', value:stats.totalBookings, icon:'🎫', color:'blue'},
+              {label:'Total Spend',     value:formatCurrency(stats.totalSpent), icon:'💳', color:'green'},
+              {label:'Pending',         value:stats.pending, icon:'⏳', color:'amber'},
+            ].map(({ label, value, icon, color }) => (
+              <div key={label} className={`${styles.statCard} ${styles[`statCard_${color}`]}`}>
+                <span className={`${styles.statIcon} ${styles[`statIcon_${color}`]}`}>{icon}</span>
+                <span className={styles.statLabel}>{label}</span>
+                <strong className={styles.statValue}>{loading ? '—' : value}</strong>
+              </div>
+            ))}
           </div>
         </section>
 
         {loading && (
-          <section className={styles.panel}>
-            <h2 className={styles.panelTitle}>Loading dashboard...</h2>
-            <p className={styles.panelText}>We&apos;re pulling in your profile and booking details.</p>
-          </section>
+          <div className={styles.contentGrid}>
+            {[0, 1, 2].map(i => (
+              <section key={i} className={`${styles.panel} ${styles.skeletonPanel}`}>
+                <div className={`${styles.skeletonLine} ${styles.skeletonTitle}`} />
+                <div className={styles.skeletonLine} />
+                <div className={`${styles.skeletonLine} ${styles.skeletonShort}`} />
+                <div className={styles.skeletonLine} />
+                <div className={`${styles.skeletonLine} ${styles.skeletonShort}`} />
+              </section>
+            ))}
+          </div>
         )}
 
         {!loading && error && (

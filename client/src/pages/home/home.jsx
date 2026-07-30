@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import styles from './Home.module.css'
 
@@ -24,16 +24,23 @@ const PACKAGES = [
 ]
 
 const WHY_US = [
-  { icon: 'Map', title: 'Remote Access', desc: 'Reach destinations other platforms do not cover, including local drivers in remote regions.' },
-  { icon: 'Local', title: 'Community-Driven', desc: 'Real tips from residents and contributors instead of recycled tourist blurbs.' },
-  { icon: 'AI', title: 'AI Planning', desc: 'Generate day-by-day itineraries aligned to your timeline, budget and trip style.' },
-  { icon: 'Bundle', title: 'All-in-One Booking', desc: 'Flights, trains, hotels and cabs in one flow so planning stays coherent.' },
+  { icon: '🗺️', title: 'Remote Access', desc: 'Reach destinations other platforms do not cover, including local drivers in remote regions.' },
+  { icon: '🤝', title: 'Community-Driven', desc: 'Real tips from residents and contributors instead of recycled tourist blurbs.' },
+  { icon: '🤖', title: 'AI Planning', desc: 'Generate day-by-day itineraries aligned to your timeline, budget and trip style.' },
+  { icon: '📦', title: 'All-in-One Booking', desc: 'Flights, trains, hotels and cabs in one flow so planning stays coherent.' },
 ]
 
 const HERO_IMAGES = [
   '/images/kerala_backwaters.png',
   '/images/goa_coast.png',
   '/images/hampi_karnataka.png',
+]
+
+const STATS = [
+  ['2,400+', 'Hidden Destinations'],
+  ['890+', 'Local Contributors'],
+  ['140+', 'Remote Regions'],
+  ['AI', 'Smart Itineraries'],
 ]
 
 export default function Home() {
@@ -49,38 +56,33 @@ export default function Home() {
   const [cabSearch, setCabSearch] = useState({ pickup: '', drop: '', date: '', type: 'Any Cab' })
   const navigate = useNavigate()
 
-  const routeMap = {
-    Flights: '/flights',
-    Trains: '/trains',
-    Hotels: '/hotels',
-    Cabs: '/cabs',
-  }
+  const statsRef = useRef(null)
+  const [statsVisible, setStatsVisible] = useState(false)
 
-  const tabIcon = { Flights: 'Flight', Trains: 'Train', Hotels: 'Hotel', Cabs: 'Cab' }
+  useEffect(() => {
+    const el = statsRef.current
+    if (!el) return
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) setStatsVisible(true) },
+      { threshold: 0.4 }
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+
+  const routeMap = { Flights: '/flights', Trains: '/trains', Hotels: '/hotels', Cabs: '/cabs' }
+  const tabIcon = { Flights: '✈', Trains: '🚂', Hotels: '🏨', Cabs: '🚕' }
 
   const updateSearch = (setter, key, value) => {
-    setter((previous) => ({ ...previous, [key]: value }))
+    setter((prev) => ({ ...prev, [key]: value }))
   }
 
   const runSearch = () => {
     const params = new URLSearchParams()
-
-    if (activeTab === 'Flights') {
-      Object.entries({ ...flightSearch, tripType }).forEach(([key, value]) => value && params.set(key, value))
-    }
-
-    if (activeTab === 'Trains') {
-      Object.entries(trainSearch).forEach(([key, value]) => value && params.set(key, value))
-    }
-
-    if (activeTab === 'Hotels') {
-      Object.entries(hotelSearch).forEach(([key, value]) => value && params.set(key, value))
-    }
-
-    if (activeTab === 'Cabs') {
-      Object.entries(cabSearch).forEach(([key, value]) => value && params.set(key, value))
-    }
-
+    if (activeTab === 'Flights') Object.entries({ ...flightSearch, tripType }).forEach(([k, v]) => v && params.set(k, v))
+    if (activeTab === 'Trains') Object.entries(trainSearch).forEach(([k, v]) => v && params.set(k, v))
+    if (activeTab === 'Hotels') Object.entries(hotelSearch).forEach(([k, v]) => v && params.set(k, v))
+    if (activeTab === 'Cabs') Object.entries(cabSearch).forEach(([k, v]) => v && params.set(k, v))
     const query = params.toString()
     navigate(`${routeMap[activeTab]}${query ? `?${query}` : ''}`)
   }
@@ -93,7 +95,6 @@ export default function Home() {
       style: 'adventure',
       travelers: '2 People',
     })
-
     navigate(`/itinerary?${params.toString()}`)
   }
 
@@ -131,8 +132,8 @@ export default function Home() {
           </p>
           <h1 className={styles.heroTitle}>
             {mode === 'traveler'
-              ? <>Travel where <em>maps end</em><br />stories begin</>
-              : <>Share what <em>only you</em><br />know exists</>}
+              ? <><span>Travel where </span><em>maps end</em><br />stories begin</>
+              : <><span>Share what </span><em>only you</em><br />know exists</>}
           </h1>
           <p className={styles.heroSub}>
             {mode === 'traveler'
@@ -150,7 +151,7 @@ export default function Home() {
                   className={`${styles.tabBtn} ${activeTab === tab ? styles.tabBtnActive : ''}`}
                   onClick={() => setActiveTab(tab)}
                 >
-                  {tabIcon[tab]} {tab}
+                  <span className={styles.tabEmoji}>{tabIcon[tab]}</span> {tab}
                 </button>
               ))}
             </div>
@@ -189,13 +190,8 @@ export default function Home() {
           </button>
         )}
 
-        <div className={styles.statsBar}>
-          {[
-            ['2,400+', 'Hidden Destinations'],
-            ['890+', 'Local Contributors'],
-            ['140+', 'Remote Regions'],
-            ['AI', 'Smart Itineraries'],
-          ].map(([num, label]) => (
+        <div className={`${styles.statsBar} ${statsVisible ? styles.statsBarVisible : ''}`} ref={statsRef}>
+          {STATS.map(([num, label]) => (
             <div key={label} className={styles.statItem}>
               <span className={styles.statNum}>{num}</span>
               <span className={styles.statLabel}>{label}</span>
@@ -208,14 +204,14 @@ export default function Home() {
         <div className={styles.container}>
           <div className={styles.sectionHeader}>
             <div>
-              <p className={styles.eyebrowSection}>Spiritual & Heritage</p>
+              <p className={styles.eyebrowSection}>Spiritual &amp; Heritage</p>
               <h2 className={styles.sectionTitle}>Discover India's <em>Soul</em></h2>
             </div>
             <button className={styles.viewAll} onClick={() => navigate('/explore')}>Explore all</button>
           </div>
           <div className={styles.destGrid}>
             {DESTINATIONS.map((destination) => (
-              <div key={destination.name} className={styles.destCard}>
+              <div key={destination.name} className={styles.destCard} onClick={() => navigate('/explore')}>
                 <div className={styles.destImgWrapper}>
                   <div className={styles.destImage} style={{ backgroundImage: `url(${destination.image})` }} />
                   <span className={styles.destTag} style={destination.tagColor}>{destination.tag}</span>
@@ -224,7 +220,7 @@ export default function Home() {
                   <h3>{destination.name}</h3>
                   <p className={styles.destState}>{destination.state}</p>
                   <p className={styles.destDesc}>{destination.desc}</p>
-                  <span className={styles.destLink}>Explore Location -&gt;</span>
+                  <span className={styles.destLink}>Explore →</span>
                 </div>
               </div>
             ))}
@@ -243,7 +239,7 @@ export default function Home() {
           </div>
           <div className={`${styles.destGrid} ${styles.destGridWide}`}>
             {MORE_DESTINATIONS.map((destination) => (
-              <div key={destination.name} className={styles.destCard}>
+              <div key={destination.name} className={styles.destCard} onClick={() => navigate('/explore')}>
                 <div className={styles.destImgWrapper} style={{ height: '280px' }}>
                   <div className={styles.destImage} style={{ backgroundImage: `url(${destination.image})` }} />
                   <span className={styles.destTag} style={destination.tagColor}>{destination.tag}</span>
@@ -252,7 +248,7 @@ export default function Home() {
                   <h3>{destination.name}</h3>
                   <p className={styles.destState}>{destination.state}</p>
                   <p className={styles.destDesc}>{destination.desc}</p>
-                  <span className={styles.destLink}>Explore Location -&gt;</span>
+                  <span className={styles.destLink}>Explore →</span>
                 </div>
               </div>
             ))}
@@ -264,7 +260,7 @@ export default function Home() {
         <div className={styles.container}>
           <div className={styles.aiBanner}>
             <div className={styles.aiLeft}>
-              <span className={styles.aiIcon}>AI</span>
+              <span className={styles.aiIcon}>🤖</span>
               <div>
                 <p className={styles.eyebrowSection}>AI-Powered</p>
                 <h2 className={styles.sectionTitle}>Your personal <em>virtual guide</em></h2>
@@ -288,7 +284,7 @@ export default function Home() {
                   <input placeholder="Rs 20,000" value={plannerBudget} onChange={(e) => setPlannerBudget(e.target.value)} />
                 </div>
               </div>
-              <button className={styles.aiBtnFull} onClick={openPlanner}>Generate My Itinerary</button>
+              <button className={styles.aiBtnFull} onClick={openPlanner}>Generate My Itinerary ✨</button>
             </div>
           </div>
         </div>
@@ -305,8 +301,11 @@ export default function Home() {
           </div>
           <div className={styles.packagesGrid}>
             {PACKAGES.map((pkg) => (
-              <div key={pkg.name} className={styles.packageCard}>
-                <div className={styles.packageImg} style={{ backgroundImage: `linear-gradient(180deg, rgba(15,23,42,0.05), rgba(15,23,42,0.58)), url(${pkg.image})` }}>
+              <div key={pkg.name} className={styles.packageCard} onClick={() => navigate('/explore')}>
+                <div
+                  className={styles.packageImg}
+                  style={{ backgroundImage: `linear-gradient(180deg, rgba(15,23,42,0.05), rgba(15,23,42,0.62)), url(${pkg.image})` }}
+                >
                   <span>{pkg.label}</span>
                 </div>
                 <div className={styles.packageBody}>
@@ -314,7 +313,7 @@ export default function Home() {
                     {pkg.tags.map((tag) => <span key={tag} className={styles.ptag}>{tag}</span>)}
                   </div>
                   <h3>{pkg.name}</h3>
-                  <p>{pkg.nights} Nights - {pkg.nights + 1} Days</p>
+                  <p>{pkg.nights} Nights · {pkg.nights + 1} Days</p>
                   <div className={styles.packagePrice}>
                     From <strong>Rs {pkg.price.toLocaleString('en-IN')}</strong> <span>/person</span>
                   </div>
@@ -330,7 +329,7 @@ export default function Home() {
           <div className={`${styles.sectionHeader} ${styles.centerHeader}`}>
             <div>
               <p className={styles.eyebrowSection}>Why choose us</p>
-              <h2 className={styles.sectionTitle}>Beyond booking - <em>genuine discovery</em></h2>
+              <h2 className={styles.sectionTitle}>Beyond booking — <em>genuine discovery</em></h2>
             </div>
           </div>
           <div className={styles.whyGrid}>
@@ -344,7 +343,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-
     </div>
   )
 }
@@ -423,7 +421,7 @@ function CabFields({ values, onChange }) {
     <>
       <FieldBox label="Pickup"><FieldInput placeholder="Address or landmark" value={values.pickup} onChange={(value) => onChange('pickup', value)} /></FieldBox>
       <FieldBox label="Drop"><FieldInput placeholder="Destination" value={values.drop} onChange={(value) => onChange('drop', value)} /></FieldBox>
-      <FieldBox label="Date & Time"><FieldInput type="datetime-local" value={values.date} onChange={(value) => onChange('date', value)} /></FieldBox>
+      <FieldBox label="Date &amp; Time"><FieldInput type="datetime-local" value={values.date} onChange={(value) => onChange('date', value)} /></FieldBox>
       <FieldBox label="Cab Type"><FieldSelect options={['Any Cab', 'Mini', 'Sedan', 'SUV', 'Local Driver']} value={values.type} onChange={(value) => onChange('type', value)} /></FieldBox>
     </>
   )

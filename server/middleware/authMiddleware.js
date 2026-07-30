@@ -1,5 +1,14 @@
 const jwt  = require('jsonwebtoken')
 const User = require('../models/User')
+const { isMongoAvailable } = require('../config/db')
+const fallbackStore = require('../services/fallbackStore')
+
+const getUserById = async (id) => {
+  if (isMongoAvailable()) {
+    return User.findById(id).select('-password')
+  }
+  return fallbackStore.findUserById(id)
+}
 
 const protect = async (req, res, next) => {
   let token
@@ -8,7 +17,7 @@ const protect = async (req, res, next) => {
     try {
       token = req.headers.authorization.split(' ')[1]
       const decoded = jwt.verify(token, process.env.JWT_SECRET)
-      req.user = await User.findById(decoded.id).select('-password')
+      req.user = await getUserById(decoded.id)
       // Bug #3 fix: user may have been deleted after the JWT was issued
       if (!req.user) {
         return res.status(401).json({ message: 'Not authorized — account no longer exists' })

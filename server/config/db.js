@@ -21,23 +21,44 @@ const buildMongoHelpMessage = (mongoUri, error) => {
   return error.message
 }
 
+let dbMode = 'disconnected'
+let mongoAvailable = false
+
 const connectDB = async () => {
   const mongoUri = process.env.MONGO_URI
 
   if (!mongoUri) {
-    throw new Error('MONGO_URI is missing in server/.env')
+    dbMode = 'fallback'
+    mongoAvailable = false
+    console.warn('MongoDB not configured; running in fallback mode with in-memory data.')
+    return { connected: false, mode: 'fallback' }
   }
 
-  if (mongoUri.startsWith('mongodb+srv://')) {
-    const host = mongoUri.replace('mongodb+srv://', '').split('@').pop().split('/')[0]
-    await dns.resolveSrv(`_mongodb._tcp.${host}`)
-  }
+  try {
+    if (mongoUri.startsWith('mongodb+srv://')) {
+      const host = mongoUri.replace('mongodb+srv://', '').split('@').pop().split('/')[0]
+      await dns.resolveSrv(`_mongodb._tcp.${host}`)
+    }
 
-  const conn = await mongoose.connect(mongoUri)
-  console.log(`MongoDB Connected: ${conn.connection.host}`)
+    const conn = await mongoose.connect(mongoUri)
+    dbMode = 'connected'
+    mongoAvailable = true
+    console.log(`MongoDB Connected: ${conn.connection.host}`)
+    return { connected: true, mode: 'mongo' }
+  } catch (error) {
+    dbMode = 'fallback'
+    mongoAvailable = false
+    console.warn(`MongoDB connection failed; falling back to in-memory storage: ${buildMongoHelpMessage(mongoUri, error)}`)
+    return { connected: false, mode: 'fallback' }
+  }
 }
+
+const isMongoAvailable = () => mongoAvailable
+const getDbMode = () => dbMode
 
 module.exports = {
   connectDB,
   buildMongoHelpMessage,
+  isMongoAvailable,
+  getDbMode,
 }

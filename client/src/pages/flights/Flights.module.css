@@ -34,8 +34,8 @@
 .checkLabel { display:flex; align-items:center; gap:10px; padding:6px 0; cursor:pointer; font-size:13px; font-weight:600; color:var(--text-mid); }
 .checkLabel input { display:none; }
 .checkBox { width:17px; height:17px; flex-shrink:0; border:1.5px solid var(--border-mid); border-radius:4px; background:white; transition:var(--transition); position:relative; }
-.checkLabel input:checked+.checkBox { background:var(--accent); border-color:var(--accent); }
-.checkLabel input:checked+.checkBox::after { content:'✓'; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:900; color:white; }
+.checkLabel input:checked + .checkBox { background:var(--accent); border-color:var(--accent); }
+.checkLabel input:checked + .checkBox::after { content:'✓'; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:900; color:white; }
 .alCode { width:28px; height:28px; border-radius:6px; font-size:9px; font-weight:900; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; }
 .rangeSlider { width:100%; accent-color:var(--accent); margin:8px 0 4px; cursor:pointer; }
 .rangeLabels { display:flex; justify-content:space-between; font-size:10.5px; font-weight:700; color:var(--text-light); }
@@ -46,9 +46,12 @@
 .tsLabel { font-size:9.5px; font-weight:700; color:var(--text-mid); }
 
 .results { display:flex; flex-direction:column; gap:12px; min-width:0; }
+
 .remoteBanner { display:flex; align-items:center; gap:14px; background:linear-gradient(135deg,#f0f8e8,#e4f4d4); border:1.5px solid #c0dca8; border-radius:var(--radius-md); padding:14px 20px; font-size:13px; color:#2a4a1a; }
 .remoteBanner strong { color:#1a3a10; }
-.remoteBanner a { font-size:12px; font-weight:700; color:var(--green); margin-left:auto; white-space:nowrap; border-bottom:1.5px solid var(--green); text-decoration:none; }
+.remoteBannerLink { font-size:12px; font-weight:700; color:var(--green); margin-left:auto; white-space:nowrap; border-bottom:1.5px solid var(--green); text-decoration:none; transition:color 0.2s; }
+.remoteBannerLink:hover { color:#065f46; border-bottom-color:#065f46; }
+
 .noResults { text-align:center; padding:60px; background:white; border:1.5px solid var(--border); border-radius:var(--radius-md); }
 .noResultsIcon { font-size:48px; margin-bottom:16px; }
 .noResults h3  { font-family:var(--font-display); font-size:20px; color:var(--text-dark); margin-bottom:8px; }
@@ -150,7 +153,7 @@
   .fcAmenities { grid-column:auto; padding:0; }
   .fcPrice { grid-column:auto; grid-row:auto; align-items:flex-start; border-left:none; border-top:1.5px solid var(--border); padding:16px 0 0; }
   .remoteBanner { align-items:flex-start; flex-wrap:wrap; }
-  .remoteBanner a { margin-left:0; }
+  .remoteBannerLink { margin-left:0; }
   .fdpExtras { grid-template-columns:1fr 1fr; }
   .modalFooter { align-items:flex-start; flex-direction:column; gap:12px; }
 }

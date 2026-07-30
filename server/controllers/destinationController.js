@@ -1,5 +1,34 @@
 const Destination = require('../models/Destination')
+const { isMongoAvailable } = require('../config/db')
+const fallbackStore = require('../services/fallbackStore')
 const { fallbackDestinations, formatDestination, filterCatalog } = require('../services/destinationCatalog')
+
+const getDestinationModel = () => {
+  if (isMongoAvailable()) return Destination
+  return {
+    countDocuments: async () => fallbackStore.getAllDestinations().length,
+    find: async (query) => fallbackStore.getAllDestinations().filter((item) => {
+      if (query.region && query.region !== 'All Regions' && item.region !== query.region) return false
+      if (query.tag && query.tag !== 'All' && item.tag !== query.tag) return false
+      if (query.isVerified === true && !item.isVerified) return false
+      if (query.$or) {
+        const searchText = query.$or
+          .map((condition) => condition.name?.$regex || condition.state?.$regex || condition.description?.$regex || '')
+          .join(' ')
+          .trim()
+          .toLowerCase()
+        if (!searchText) return true
+        const haystack = `${item.name} ${item.state} ${item.description}`.toLowerCase()
+        return haystack.includes(searchText)
+      }
+      return true
+    }),
+    findById: async (id) => fallbackStore.getDestinationById(id),
+    create: async (payload) => fallbackStore.createDestination(payload),
+    findByIdAndUpdate: async (id, updates) => fallbackStore.updateDestination(id, updates),
+    findByIdAndDelete: async (id) => fallbackStore.deleteDestination(id),
+  }
+}
 
 // GET /api/destinations
 const getDestinations = async (req, res) => {
@@ -20,7 +49,7 @@ const getDestinations = async (req, res) => {
 
     // Bug #19 fix: count ALL documents (not just matching ones) so we can decide
     // whether the DB is populated. If DB is empty, use the catalog exclusively.
-    const totalCount = await Destination.countDocuments()
+    const totalCount = await getDestinationModel().countDocuments()
 
     if (totalCount === 0) {
       // DB is empty — filter and return the catalog only
@@ -34,9 +63,7 @@ const getDestinations = async (req, res) => {
     // DB has data — apply the same filters to both sources and merge.
     // Both the Mongoose query and filterCatalog now receive identical filter
     // parameters so results are consistent regardless of which source they come from.
-    const destinations = await Destination.find(query)
-      .populate('addedBy', 'name')
-      .sort({ rating: -1 })
+    const destinations = await getDestinationModel().find(query)
 
     const formattedDestinations = destinations.map(formatDestination)
     const existingNames = new Set(formattedDestinations.map((destination) => destination.name.toLowerCase()))
@@ -55,7 +82,7 @@ const getDestinations = async (req, res) => {
 // GET /api/destinations/:id
 const getDestinationById = async (req, res) => {
   try {
-    const dest = await Destination.findById(req.params.id).populate('addedBy', 'name')
+    const dest = await getDestinationModel().findById(req.params.id)
     if (!dest) return res.status(404).json({ message: 'Destination not found' })
     res.json(formatDestination(dest))
   } catch (error) {
@@ -66,13 +93,15 @@ const getDestinationById = async (req, res) => {
 // POST /api/destinations — contributor only
 const createDestination = async (req, res) => {
   try {
-    const destination = await Destination.create({
+    const destination = await getDestinationModel().create({
       ...req.body,
       contributorName: req.user.name,
       addedBy: req.user._id,
       isVerified: false,
     })
-    const populated = await destination.populate('addedBy', 'name')
+    const populated = typeof destination.populate === 'function'
+      ? await destination.populate('addedBy', 'name')
+      : destination
     res.status(201).json(formatDestination(populated))
   } catch (error) {
     res.status(500).json({ message: error.message })
@@ -110,11 +139,15 @@ const updateDestination = async (req, res) => {
       ...(isVerified  !== undefined && { isVerified }),
     }
 
-    const dest = await Destination.findByIdAndUpdate(
+    const destResult = await getDestinationModel().findByIdAndUpdate(
       req.params.id,
       allowedUpdates,
       { new: true, runValidators: true }
-    ).populate('addedBy', 'name')
+    )
+
+    const dest = typeof destResult?.populate === 'function'
+      ? await destResult.populate('addedBy', 'name')
+      : destResult
 
     if (!dest) return res.status(404).json({ message: 'Destination not found' })
     res.json(formatDestination(dest))
@@ -126,7 +159,7 @@ const updateDestination = async (req, res) => {
 // DELETE /api/destinations/:id
 const deleteDestination = async (req, res) => {
   try {
-    const dest = await Destination.findByIdAndDelete(req.params.id)
+    const dest = await getDestinationModel().findByIdAndDelete(req.params.id)
     if (!dest) return res.status(404).json({ message: 'Destination not found' })
     res.json({ message: 'Destination deleted' })
   } catch (error) {

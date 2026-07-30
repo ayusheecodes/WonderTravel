@@ -279,7 +279,7 @@ export default function Login() {
           </div>
 
           <p className={styles.footerNote}>
-            By logging in you agree to our <a href="#">Terms</a> and <a href="#">Privacy Policy</a>
+            By logging in you agree to our <Link to="/info/terms">Terms</Link> and <Link to="/info/privacy">Privacy Policy</Link>
           </p>
         </div>
 
