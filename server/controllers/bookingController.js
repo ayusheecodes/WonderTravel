@@ -59,7 +59,7 @@ const createBooking = async (req, res) => {
 // DELETE /api/bookings/:id — cancel booking
 const cancelBooking = async (req, res) => {
   try {
-    const booking = await Booking.findById(req.params.id)
+    const booking = await getBookingModel().findById(req.params.id)
     if (!booking) {
       return res.status(404).json({ message: 'Booking not found' })
     }
@@ -86,7 +86,7 @@ const cancelBooking = async (req, res) => {
 // GET /api/bookings/:id — get one booking
 const getBookingById = async (req, res) => {
   try {
-    const booking = await Booking.findById(req.params.id)
+    const booking = await getBookingModel().findById(req.params.id)
     if (!booking) return res.status(404).json({ message: 'Booking not found' })
     // Bug #2 fix: 403 Forbidden (authenticated but not the owner), not 401 Unauthenticated
     if (booking.user.toString() !== req.user._id.toString()) {

@@ -24,9 +24,26 @@ const getUserModel = () => {
       if (phone) return fallbackStore.findUserByPhone(phone)
       return null
     },
+    // For login: fallbackStore already stores hashed passwords so no special handling needed
+    findOneWithPassword: async (query) => {
+      if (!query) return null
+      if (query.email) return fallbackStore.findUserByEmail(query.email)
+      if (query.phone) return fallbackStore.findUserByPhone(query.phone)
+      return null
+    },
     findById: async (id) => fallbackStore.findUserById(id),
     create: async (payload) => fallbackStore.createUser(payload),
   }
+}
+
+// Returns a user document that includes the password field for comparison.
+// Required because the User schema marks password as select:false.
+const findUserForAuth = async (query) => {
+  if (isMongoAvailable()) {
+    return User.findOne(query).select('+password')
+  }
+  const model = getUserModel()
+  return model.findOneWithPassword(query)
 }
 
 // Generate JWT
@@ -120,11 +137,8 @@ const login = async (req, res) => {
       return res.status(400).json({ message: 'Please enter email and password' })
     }
 
-    // Find user and include password
-    const user = await getUserModel().findOne({ email })
-    if (user && user.password) {
-      user.password = user.password
-    }
+    // Find user and include password field (select: false in schema, so we use select('+password'))
+    const user = await findUserForAuth({ email })
     if (!user) {
       return res.status(401).json({ message: 'No account found with this email' })
     }
