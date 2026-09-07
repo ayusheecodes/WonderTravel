@@ -46,10 +46,10 @@ jobs:
   deploy-server:
     needs: [test-server, build-client]
     runs-on: ubuntu-latest
-    env:
-      RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK || '' }}
     steps:
       - name: Trigger Render Deploy Hook
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
         run: |
           if [ -z "$RENDER_DEPLOY_HOOK" ]; then
             echo "Render deploy hook not configured, skipping."
